@@ -145,8 +145,7 @@ function performQuery(qs, detailSearchQueryStrings, detailSearchInputs) {
     var idQuery = (qs == Number(qs) && qs.length === 10)
     
     const xhr2 = new XMLHttpRequest();
-    // xhr2.open('POST', 'http://wwii-refugees.ee/.netlify/functions/searchB');
-    xhr2.open('POST', 'http://localhost:8008');
+    xhr2.open('POST', '/.netlify/functions/searchB');
     xhr2.setRequestHeader('Content-Type', 'application/json');
     xhr2.onload = function () {
         if (xhr2.status === 200) {
