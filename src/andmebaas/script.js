@@ -86,9 +86,22 @@ const hasMouseMoved = (event) => {
 var ecresults = {}
 var fbFormData = {}
 
+// Pagination
+
+let totalHits;
+let totalPages;
+const pageSize = 100;
+const currentURL = window.location.href;
+
 function performQuery(qs, detailSearchQueryStrings, detailSearchInputs) {
     // Elasticsearch query, that matches querystring with multiple fields and filters by WWII
-    
+    let startFrom = 0;
+    let page = getQueryStringValue('page');
+
+    if (typeof page !== null && page > 0) {
+        startFrom = (page - 1) * pageSize;
+    }
+
     let qData = {
             query: {
                 bool: {
@@ -107,6 +120,8 @@ function performQuery(qs, detailSearchQueryStrings, detailSearchInputs) {
                     ]
                 },
             },
+            size: pageSize,
+            from: startFrom,
             sort: { 'eesnimi.raw': 'asc', 'perenimi.raw': 'asc' },
             _source: [
                 'isperson', 'kivi', 'emem', 'evo', 'wwii', 'evokirje',
@@ -130,7 +145,8 @@ function performQuery(qs, detailSearchQueryStrings, detailSearchInputs) {
     var idQuery = (qs == Number(qs) && qs.length === 10)
     
     const xhr2 = new XMLHttpRequest();
-    xhr2.open('POST', '/.netlify/functions/searchB');
+    // xhr2.open('POST', 'http://wwii-refugees.ee/.netlify/functions/searchB');
+    xhr2.open('POST', 'http://localhost:8008');
     xhr2.setRequestHeader('Content-Type', 'application/json');
     xhr2.onload = function () {
         if (xhr2.status === 200) {
@@ -294,6 +310,7 @@ function generalSearch(xhr2, idQuery, qData) {
     console.log('ecresults', ecresults)
     console.log(data.error || 'All green', { query: qData.query, total: data.hits.total.value, hits: data.hits.hits.map(hit => hit._source) })
     const searchCountE = document.querySelector('#search-count')
+    totalHits = data.hits.total.value;
     if(data.hits.total.value) {
         searchCountE.innerHTML = "Leitud tulemuste arv: " + data.hits.total.value;
     }
@@ -334,6 +351,113 @@ function generalSearch(xhr2, idQuery, qData) {
     window.scrollBy(0, -100)
 
     initResultFeedbackButtons()
+    pagination();
+}
+
+function getURLWithPage(page) {
+    const url = new URL(currentURL);
+    const urlParams = new URLSearchParams(url.search);
+    urlParams.set("page", page);
+
+    url.search = urlParams.toString();
+    return url.toString();
+}
+
+function pagination() {
+    const paginationWrapper = document.querySelector(".pagination-wrapper");
+    const paginationButtons = document.querySelectorAll(".pagination-button");
+    const paginationDots = document.querySelectorAll(".pagination-dots");
+
+    if (totalHits >= 1) {
+        paginationWrapper.style.display = "flex";
+    } else {
+        paginationWrapper.style.display = "none";
+    }
+
+    let currentPage = getQueryStringValue('page');
+    let page;
+    
+    if (currentPage === undefined || currentPage === null) {
+        currentPage = 1;
+    }
+
+    if (totalHits !== undefined) {
+        totalPages = Math.ceil(totalHits / pageSize);
+        
+        paginationButtons.forEach((button) => {
+            button.setAttribute("page", "");
+            if (totalPages >= 1) {
+                if (!button.classList.contains("pagination-current-page")) {
+                    button.setAttribute("hidden", "");
+                    paginationDots.forEach((dots) => {
+                        dots.setAttribute("hidden", "");
+                    })
+                }
+            }
+            if (totalPages > 1) {
+                button.removeAttribute("hidden");
+                paginationDots.forEach((dots) => {
+                    dots.removeAttribute("hidden");
+                })
+                if (currentPage == 1) {
+                    paginationDots[0].setAttribute("hidden", "");
+                } else {
+                    paginationDots[0].removeAttribute("hidden", "");
+                }
+                if (currentPage == totalPages) {
+                    paginationDots[1].setAttribute("hidden", "");
+                } else {
+                    paginationDots[1].removeAttribute("hidden", "");
+                }
+            }
+            if (button.classList.contains("pagination-prev")) {
+                if(totalPages === 1) {
+                    currentPage = 1;
+                }
+                if (currentPage == 1) {
+                    button.setAttribute("hidden", "");
+                } else {
+                    button.removeAttribute("hidden", "");
+                }
+                page = parseInt(currentPage) - 1;
+            } else if (button.classList.contains("pagination-first-page")) {
+                if (totalPages >= 1 && currentPage == 1) {
+                    button.setAttribute("hidden", "");
+                } else {
+                    button.removeAttribute("hidden", "");
+                }
+                page = 1;
+                button.textContent = "1"
+            } else if (button.classList.contains("pagination-current-page")) { 
+                if (currentPage && currentPage !== 1) {
+                    currentPage = getQueryStringValue('page');
+                    page = parseInt(currentPage);
+                    if(totalPages === 1) {
+                        currentPage = 1;
+                    }
+                } else {
+                    page = currentPage;
+                }
+                button.textContent = currentPage;
+            } else if (button.classList.contains("pagination-last-page")) {
+                if (totalPages >= 1 && currentPage == totalPages) {
+                    button.setAttribute("hidden", "");
+                } else {
+                    button.removeAttribute("hidden", "");
+                }
+                page = totalPages;
+                button.textContent = totalPages;
+            } else if (button.classList.contains("pagination-next")) {
+                if (currentPage == totalPages) {
+                    button.setAttribute("hidden", "");
+                } else {
+                    button.removeAttribute("hidden", "");
+                }
+                page = parseInt(currentPage) + 1;
+            }
+            button.setAttribute("href", getURLWithPage(page))
+        })
+    }
 }
 
 function initResultFeedbackButtons() {

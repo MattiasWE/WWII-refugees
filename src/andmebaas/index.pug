@@ -10,7 +10,7 @@ block body
 
     include /_templates/alerts.pug
 
-    .sisu.w3-container#artikkel 
+    .sisu.w3-container#artikkel
         div.w3-panel.w3-display-container
             h1= self.title
 
@@ -93,7 +93,7 @@ block body
                         name='placeOfDeath',
                         id='place-of-death-input',
                         placeholder= self.search.placeholderPlaceOfDeath
-                    )
+                    ) 
                     div.year-filter-wrapper
                         div.year-filter-inputs-wrapper
                             div.year-filter-input-wrapper
@@ -151,6 +151,14 @@ block body
         //-     <input class="col-8 col-md-6 col-xl-4" type="search" name="q" placeholder="sisesta nimi →">
         //-     <button class="col-4 col-md-3 col-xl-2">Otsi/Search</button>
         //- </form>
+        div.pagination-wrapper
+            a.pagination-prev.pagination-button.pagination= self.pagination.paginationPrev
+            a.pagination-first-page.pagination-button= self.pagination.paginationFirstPage
+            div.pagination-dots= self.pagination.paginationDots 
+            a.pagination-current-page.pagination-button= self.pagination.paginationCurrentPage 
+            div.pagination-dots= self.pagination.paginationDots
+            a.pagination-last-page.pagination-button= self.pagination.paginationLastPage
+            a.pagination-next.pagination-button= self.pagination.paginationNext
 
     include /_templates/footer.pug
 
